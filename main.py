@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+from discord_webhook import DiscordWebhook, DiscordEmbed
+import time
 
 
 # from selenium import webdriver
@@ -118,15 +120,32 @@ def checkoutlink(session, sessionid):
         "Data": sessionid
     }
     r = session.post("https://brandshop.ru/index.php?route=payment/payture/send", data=data)
-    print(r.text[12:-2].replace('\\', ''))
+    return r.text[12:-2].replace('\\', '')
+
+
+def webhook(email, link):
+    webhook = DiscordWebhook(url='https://discordapp.com/api/webhooks/743404457647145010'
+                                 '/IJ7__6trZSde5qFvKH_t7csAer3GUha6WceZ72t7UnX1XPMzKWIOokpPz_sX7oIF5zDJ',
+                             content=link)
+    embed = DiscordEmbed(title=email, description='Brandshop Preorder Bot', color=242424)
+    webhook.add_embed(embed)
+
+    response = webhook.execute()
+
+
+
 
 
 if __name__ == '__main__':
+    #start_time = time.time()
     s = requests.Session()
     login_r(s, "semkon@mail.ru", "11111111")
     product = infos("https://brandshop.ru/goods/249704/cd5436-100/", "40.5 EU")
     add_to_cart(s, product)
     select = checkout(s, 'cdek', 'payture')
     prep = sessionid(select)
-    checkoutlink(s, prep)
+    link = checkoutlink(s, prep)
+    webhook('semkon@mail.ru', link)
+
+    #print("--- %s seconds ---" % (time.time() - start_time))
 
