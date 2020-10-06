@@ -76,7 +76,7 @@ import threading
 def login_r(session, email, password):
     data = {"email": email,
             "password": password,
-            "redirect": "https://brandshop.ru/checkout/"
+            "redirect": ""
             }
     session.post("https://95.217.195.88/login/", data=data, verify=False)
 
@@ -97,7 +97,7 @@ def add_to_cart(session, product):
                     "option_value_id": product[2],
                     product[3]: product[1]
                     }
-    session.post("https://brandshop.ru/index.php?route=checkout/cart/add/", data=product_info)
+    session.post("https://95.217.195.88/index.php?route=checkout/cart/add/", data=product_info)
 
 
 def checkout(session, s_method, p_method):
@@ -120,24 +120,28 @@ def checkoutlink(session, sessionid):
     data = {
         "Data": sessionid
     }
-    r = session.post("https://brandshop.ru/index.php?route=payment/payture/send", data=data)
+    r = session.post("https://95.217.195.88/index.php?route=payment/payture/send", data=data)
     return r.text[12:-2].replace('\\', '')
 
 
 def webhook(email, link, webhook_input):
-    webhook = DiscordWebhook(url=webhook_input,content=link)
+    webhook = DiscordWebhook(url=webhook_input, content=link)
     embed = DiscordEmbed(title=email, description='Brandshop Preorder Bot', color=242424)
     embed.set_author(name='Author Name')
     webhook.add_embed(embed)
 
     response = webhook.execute()
 
-def go(email, password, link, size, delivery, webhook_input, s):
+def go(email, password, link, size, delivery, webhook_input):
     s = requests.Session()
     login_r(s, email, str(password))
+    time.sleep(0.5)
     product = infos(link, size)
+    time.sleep(0.5)
     add_to_cart(s, product)
+    time.sleep(0.5)
     select = checkout(s, delivery, 'payture')
+    time.sleep(0.5)
     prep = sessionid(select)
     link = checkoutlink(s, prep)
     webhook(email, link, webhook_input)
@@ -168,10 +172,10 @@ if __name__ == '__main__':
 
     # start_time = time.time()
     # s = requests.Session()
-    # login_r(s, "sema5@sksnkrs.club", "11111111")
+    # login_r(s, "sema7@sksnkrs.club", "Alkash228")
     # product = infos("https://brandshop.ru/goods/249704/cd5436-100/", "40.5 EU")
     # add_to_cart(s, product)
-    # select = checkout(s, 'cdek', 'payture')
+    # select = checkout(s, 'flat', 'payture')
     # prep = sessionid(select)
     # link = checkoutlink(s, prep)
     # webhook('semkon@mail.ru', link, 'https://discordapp.com/api/webhooks/743404457647145010/IJ7__6trZSde5qFvKH_t7csAer3GUha6WceZ72t7UnX1XPMzKWIOokpPz_sX7oIF5zDJ')
