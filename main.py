@@ -2,8 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from discord_webhook import DiscordWebhook, DiscordEmbed
+import csv
 import time
-
+import threading
 
 # from selenium import webdriver
 # from selenium.webdriver.firefox.options import Options
@@ -123,29 +124,57 @@ def checkoutlink(session, sessionid):
     return r.text[12:-2].replace('\\', '')
 
 
-def webhook(email, link):
-    webhook = DiscordWebhook(url='https://discordapp.com/api/webhooks/743404457647145010'
-                                 '/IJ7__6trZSde5qFvKH_t7csAer3GUha6WceZ72t7UnX1XPMzKWIOokpPz_sX7oIF5zDJ',
-                             content=link)
+def webhook(email, link, webhook_input):
+    webhook = DiscordWebhook(url=webhook_input,content=link)
     embed = DiscordEmbed(title=email, description='Brandshop Preorder Bot', color=242424)
+    embed.set_author(name='Author Name')
     webhook.add_embed(embed)
 
     response = webhook.execute()
+
+def go(email, password, link, size, delivery, webhook_input, s):
+    s = requests.Session()
+    login_r(s, email, str(password))
+    product = infos(link, size)
+    add_to_cart(s, product)
+    select = checkout(s, delivery, 'payture')
+    prep = sessionid(select)
+    link = checkoutlink(s, prep)
+    webhook(email, link, webhook_input)
+
+
+
 
 
 
 
 
 if __name__ == '__main__':
-    #start_time = time.time()
-    s = requests.Session()
-    login_r(s, "semkon@mail.ru", "11111111")
-    product = infos("https://brandshop.ru/goods/249704/cd5436-100/", "40.5 EU")
-    add_to_cart(s, product)
-    select = checkout(s, 'cdek', 'payture')
-    prep = sessionid(select)
-    link = checkoutlink(s, prep)
-    webhook('semkon@mail.ru', link)
+    start_time = time.time()
+    link = input("Введите ссылку на продукт: ")
+    size = input("Введите размер в формате '40 EU': ")
+    delivery = input("Введите метод доставки (для предзаказов '...'): ")
+    webhook_input = input("Введите Discord Webhook: " )
+    start_time = time.time()
+    with open('bs.csv', 'r') as file:
+        reader = csv.reader(file, delimiter=';')
+        for row in reader:
+            x = threading.Thread(target=go, args=(row[0], row[1], link, size, delivery, webhook_input))
+            x.start()
 
-    #print("--- %s seconds ---" % (time.time() - start_time))
+
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+
+    # start_time = time.time()
+    # s = requests.Session()
+    # login_r(s, "sema5@sksnkrs.club", "11111111")
+    # product = infos("https://brandshop.ru/goods/249704/cd5436-100/", "40.5 EU")
+    # add_to_cart(s, product)
+    # select = checkout(s, 'cdek', 'payture')
+    # prep = sessionid(select)
+    # link = checkoutlink(s, prep)
+    # webhook('semkon@mail.ru', link, 'https://discordapp.com/api/webhooks/743404457647145010/IJ7__6trZSde5qFvKH_t7csAer3GUha6WceZ72t7UnX1XPMzKWIOokpPz_sX7oIF5zDJ')
+    #
+    # print("--- %s seconds ---" % (time.time() - start_time))
 
