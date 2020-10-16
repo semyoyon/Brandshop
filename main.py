@@ -5,6 +5,9 @@ from discord_webhook import DiscordWebhook, DiscordEmbed
 import csv
 import time
 import threading
+import json
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # from selenium import webdriver
 # from selenium.webdriver.firefox.options import Options
@@ -113,61 +116,73 @@ def checkout(session, s_method, p_method):
 def sessionid(u):
     soup = BeautifulSoup(u.text, 'html.parser')
     div = soup.find(id="request-data")
-    return div['value']
+    img = soup.find('div', {"class": "col col-3 col-sm-3"}).img['src']
+    result = ''
+    for wrapper in soup.findAll("div", {"class": "col col-6 sum"}):
+        if wrapper.text != 'Итого':
+            result = wrapper.text
+    return div['value'], img, result
 
 
 def checkoutlink(session, sessionid):
-    data = {
-        "Data": sessionid
-    }
+    data = {"Data": sessionid}
     r = session.post("https://95.217.195.88/index.php?route=payment/payture/send", data=data)
     return r.text[12:-2].replace('\\', '')
 
 
-def webhook(email, link, webhook_input):
-    webhook = DiscordWebhook(url=webhook_input, content=link)
-    embed = DiscordEmbed(title=email, description='Brandshop Preorder Bot', color=242424)
-    embed.set_author(name='Author Name')
-    webhook.add_embed(embed)
+def webhook(email, link, size, img, price, webhook_input):
+    # webhook = DiscordWebhook(url=webhook_input, content=link)
+    # embed = DiscordEmbed(title=email, description='Brandshop Preorder Bot', color=242424)
+    # embed.set_author(name='Author Name')
+    # webhook.add_embed(embed)
+    # webhook.execute()
+    webhook = DiscordWebhook(url=webhook_input, username="Brandshop Preorder Bot")
+    embed = DiscordEmbed(title=email, url=link, color=39368)
+    embed.set_footer(text='BS v0.9')
+    embed.set_timestamp()
+    embed.add_embed_field(name='Size', value=size, inline=True)
+    embed.add_embed_field(name='Price', value=price, inline=True)
+    embed.set_thumbnail(url=img)
 
+    webhook.add_embed(embed)
     response = webhook.execute()
+    print("Вебхук послан для: " + email)
+
 
 def go(email, password, link, size, delivery, webhook_input):
     s = requests.Session()
     login_r(s, email, str(password))
-    time.sleep(0.5)
     product = infos(link, size)
-    time.sleep(0.5)
     add_to_cart(s, product)
-    time.sleep(0.5)
     select = checkout(s, delivery, 'payture')
-    time.sleep(0.5)
-    prep = sessionid(select)
+    prep = sessionid(select)[0]
     link = checkoutlink(s, prep)
-    webhook(email, link, webhook_input)
-
-
-
-
-
-
+    img = sessionid(select)[1]
+    price = sessionid(select)[2]
+    webhook(email, link, size, img, price, webhook_input)
 
 
 if __name__ == '__main__':
-    start_time = time.time()
     link = input("Введите ссылку на продукт: ")
-    size = input("Введите размер в формате '40 EU': ")
-    delivery = input("Введите метод доставки (для предзаказов '...'): ")
-    webhook_input = input("Введите Discord Webhook: " )
-    start_time = time.time()
-    with open('bs.csv', 'r') as file:
-        reader = csv.reader(file, delimiter=';')
-        for row in reader:
-            x = threading.Thread(target=go, args=(row[0], row[1], link, size, delivery, webhook_input))
+    size = input("Введите размер: ") + " EU"
+    delivery = input("Введите метод доставки (для предзаказов 'pickup', для доставки 'flat'): ")
+    with open('webhook.json') as json_file:
+        data = json.load(json_file)
+        webhook_input = data['webhook']
+
+    with open('accounts.json') as json_file:
+        data = json.load(json_file)
+        for p in data['accounts']:
+            x = threading.Thread(target=go, args=(p['email'], p['password'], link, size, delivery, webhook_input))
             x.start()
+            time.sleep(5)
+    # with open('bs.csv', 'r') as file:
+    #     reader = csv.reader(file, delimiter=';')
+    #     for row in reader:
+    #         x = threading.Thread(target=go, args=(row[0], row[1], link, size, delivery, webhook_input))
+    #         x.start()
+    #         time.sleep(5)
 
-
-    print("--- %s seconds ---" % (time.time() - start_time))
 
 
     # start_time = time.time()
