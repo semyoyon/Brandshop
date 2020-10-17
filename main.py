@@ -140,7 +140,7 @@ if __name__ == '__main__':
         print("\nДоступны размеры: ")
         print('\n'.join(getSizes(link)))
         size = input("\nВведите размер в формате '40': ") + " EU"
-        delivery = input("\nВыберите метод доставки:\n(1) Для предзаказов 'pickup'\n(2) Для доставки 'flat'\n")
+        delivery = input("\nВыберите метод доставки:\n(1) Для предзаказов\n(2) Для доставки\n")
         if int(delivery) == 1:
             delivery = "pickup"
         if int(delivery) == 2:
