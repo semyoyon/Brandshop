@@ -17,6 +17,12 @@ def login_r(session, email, password):
             }
     session.post("https://95.217.195.88/login/", data=data, verify=False)
 
+def getSizes(productLink):
+    link = requests.get(productLink)
+    soup = BeautifulSoup(link.text, 'html.parser')
+    scores = soup.findAll("div", {"class": "sizeselect"})
+    list = [i.string for i in scores]
+    return list
 
 def infos(link, size):
     link = requests.get(link)
@@ -131,8 +137,15 @@ if __name__ == '__main__':
 
     if int(mode) == 1:
         link = input("Введите ссылку на продукт: ")
-        size = input("Введите размер: ") + " EU"
-        delivery = input("Введите метод доставки (для предзаказов 'pickup', для доставки 'flat'): ")
+        print("\nДоступны размеры: ")
+        print('\n'.join(getSizes(link)))
+        size = input("\nВведите размер в формате '40': ") + " EU"
+        delivery = input("\nВыберите метод доставки:\n(1) Для предзаказов\n(2) Для доставки\n")
+        if int(delivery) == 1:
+            delivery = "pickup"
+        if int(delivery) == 2:
+            delivery = "flat"
+        
         with open('webhook.json') as json_file:
             data = json.load(json_file)
             webhook_input = data['webhook']
