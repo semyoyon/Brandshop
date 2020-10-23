@@ -17,12 +17,14 @@ def login_r(session, email, password):
             }
     session.post("https://95.217.195.88/login/", data=data, verify=False)
 
+
 def getSizes(productLink):
     link = requests.get(productLink)
     soup = BeautifulSoup(link.text, 'html.parser')
     scores = soup.findAll("div", {"class": "sizeselect"})
     list = [i.string for i in scores]
     return list
+
 
 def infos(link, size):
     link = requests.get(link)
@@ -112,6 +114,21 @@ def win_check(session, price, date):
         print("На аккаунте нет заказов")
 
 
+def clean_cart(session, email):
+    link = session.get("https://95.217.195.88/checkout/")
+    soup = BeautifulSoup(link.text, 'html.parser')
+    items = soup.findAll("div", {"class": "col-3 quantity"})
+
+    if items:
+        for wrapper in items:
+            itemtoremove = wrapper.input['name']
+            data = {itemtoremove: "0"}
+            response = session.post("https://95.217.195.88/cart/", data=data)
+            print("Товар удален для: " + email)
+    else:
+        print('Корзина аккаунта ' + email + ' итак пуста')
+
+
 def go(email, password, link, size, delivery, webhook_input):
     s = requests.Session()
     login_r(s, email, str(password))
@@ -132,8 +149,14 @@ def go_win(email, password, price, date, webhook_input):
         win_webhook(email, price, date, webhook_input)
 
 
+def go_clean(email, password):
+    s = requests.Session()
+    login_r(s, email, str(password))
+    clean_cart(s, email)
+
+
 if __name__ == '__main__':
-    mode = input("Выберите режим:\n(1) Регистрация предзаказа\n(2) Чекер побед\n")
+    mode = input("Выберите режим:\n(1) Регистрация предзаказа\n(2) Чекер побед\n(3) Очистка корзины\n")
 
     if int(mode) == 1:
         link = input("Введите ссылку на продукт: ")
@@ -145,7 +168,7 @@ if __name__ == '__main__':
             delivery = "pickup"
         if delivery == str(2):
             delivery = "flat"
-        
+
         with open('webhook.json') as json_file:
             data = json.load(json_file)
             webhook_input = data['webhook']
@@ -168,5 +191,13 @@ if __name__ == '__main__':
             data = json.load(json_file)
             for p in data['accounts']:
                 x = threading.Thread(target=go_win, args=(p['email'], p['password'], price, date, webhook_input))
+                x.start()
+                time.sleep(5)
+
+    if int(mode) == 3:
+        with open('accounts.json') as json_file:
+            data = json.load(json_file)
+            for p in data['accounts']:
+                x = threading.Thread(target=go_clean, args=(p['email'], p['password']))
                 x.start()
                 time.sleep(5)
