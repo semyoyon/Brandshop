@@ -93,7 +93,7 @@ def win_webhook(email, price, date, webhook_input):
     embed.add_embed_field(name='Price', value=price, inline=True)
     embed.add_embed_field(name='Date', value=date, inline=True)
     webhook.add_embed(embed)
-    responce = webhook.execute()
+    webhook.execute()
     print("Вебхук послан для: " + email)
 
 
