@@ -18,12 +18,12 @@ def login_r(session, email, password):
     session.post("https://95.217.195.88/login/", data=data, verify=False)
 
 
-def getSizes(productLink):
-    link = requests.get(productLink)
+def get_sizes(product_link):
+    link = requests.get(product_link)
     soup = BeautifulSoup(link.text, 'html.parser')
     scores = soup.findAll("div", {"class": "sizeselect"})
-    list = [i.string for i in scores]
-    return list
+    return_list = [i.string for i in scores]
+    return return_list
 
 
 def infos(link, size):
@@ -81,7 +81,7 @@ def webhook(email, link, size, img, price, webhook_input):
     embed.add_embed_field(name='Price', value=price, inline=True)
     embed.set_thumbnail(url=img)
     webhook.add_embed(embed)
-    response = webhook.execute()
+    webhook.execute()
     print("Вебхук послан для: " + email)
 
 
@@ -93,7 +93,7 @@ def win_webhook(email, price, date, webhook_input):
     embed.add_embed_field(name='Price', value=price, inline=True)
     embed.add_embed_field(name='Date', value=date, inline=True)
     webhook.add_embed(embed)
-    response = webhook.execute()
+    responce = webhook.execute()
     print("Вебхук послан для: " + email)
 
 
@@ -123,7 +123,7 @@ def clean_cart(session, email):
         for wrapper in items:
             itemtoremove = wrapper.input['name']
             data = {itemtoremove: "0"}
-            response = session.post("https://95.217.195.88/cart/", data=data)
+            session.post("https://95.217.195.88/cart/", data=data)
             print("Товар удален для: " + email)
     else:
         print('Корзина аккаунта ' + email + ' итак пуста')
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     if int(mode) == 1:
         link = input("Введите ссылку на продукт: ")
         print("\nДоступны размеры: ")
-        print('\n'.join(getSizes(link)))
+        print('\n'.join(get_sizes(link)))
         size = input("\nВведите размер в формате '40': ") + " EU"
         delivery = input("\nВыберите метод доставки:\n(1) Для предзаказов\n(2) Для доставки\n")
         if delivery == str(1):
